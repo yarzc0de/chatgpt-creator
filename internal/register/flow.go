@@ -11,7 +11,6 @@ import (
 
 	http "github.com/bogdanfinn/fhttp"
 	"github.com/verssache/chatgpt-creator/internal/email"
-	"github.com/verssache/chatgpt-creator/internal/sentinel"
 	"github.com/verssache/chatgpt-creator/internal/util"
 )
 
@@ -221,6 +220,7 @@ func (c *Client) validateOTP(code string) (int, map[string]interface{}, error) {
 }
 
 // createAccount creates the user account with name and birthdate
+// NOTE: No sentinel token needed for this step (confirmed from working implementations)
 func (c *Client) createAccount(name, birthdate string) (int, map[string]interface{}, error) {
 	createURL := authURL + "/api/accounts/create_account"
 	payload := map[string]string{
@@ -229,22 +229,11 @@ func (c *Client) createAccount(name, birthdate string) (int, map[string]interfac
 	}
 	jsonPayload, _ := json.Marshal(payload)
 
-	sentinelCreateAccount, err := sentinel.BuildSentinelToken(c.session, c.deviceID, "create_account", c.ua, c.secChUA, c.impersonate)
-	if err != nil {
-		return 0, nil, fmt.Errorf("failed to get sentinel auth: %v", err)
-	}
-
 	req, _ := http.NewRequest("POST", createURL, strings.NewReader(string(jsonPayload)))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Referer", authURL+"/about-you")
 	req.Header.Set("Origin", authURL)
-	req.Header.Set("openai-sentinel-token", sentinelCreateAccount)
-
-	traceHeaders := util.MakeTraceHeaders()
-	for k, v := range traceHeaders {
-		req.Header.Set(k, v)
-	}
 
 	resp, err := c.do(req)
 	if err != nil {
