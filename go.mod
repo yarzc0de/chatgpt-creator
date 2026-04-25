@@ -1,6 +1,6 @@
 module github.com/verssache/chatgpt-creator
 
-go 1.25.5
+go 1.24.1
 
 require (
 	github.com/PuerkitoBio/goquery v1.11.0
